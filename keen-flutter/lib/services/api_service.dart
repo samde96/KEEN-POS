@@ -7,10 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   // TODO: Update this to your computer's local IP address (e.g., '192.168.1.100')
   // when running on a physical device.
-  static const String _localIP = '10.178.77.236';
+  static const String _localIP = '192.168.0.100';
 
   static String get baseUrl {
-    if (kIsWeb) return 'http://localhost:8080/api';
+    if (kIsWeb) return 'https://keen-pos.onrender.com/api';
     
     if (defaultTargetPlatform == TargetPlatform.android) {
       // Use _localIP for emulator (10.0.2.2) or your machine's IP for physical device
