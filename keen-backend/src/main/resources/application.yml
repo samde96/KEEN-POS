@@ -2,10 +2,11 @@ spring:
   application:
     name: keen-pos
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/keen_pos_db} # Default for local dev, will be overridden by Render ENV
+    # Use separate properties for PostgreSQL to avoid URL parsing issues
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:keen_pos_db}
     driverClassName: org.postgresql.Driver
-    username: ${JDBC_DATABASE_USERNAME:keen_pos_user} # Default for local dev, will be overridden by Render ENV
-    password: ${JDBC_DATABASE_PASSWORD:password} # Default for local dev, will be overridden by Render ENV
+    username: ${DB_USERNAME:keen_pos_user}
+    password: ${DB_PASSWORD:password}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -14,11 +15,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  # H2 console is disabled as we are using PostgreSQL on Render
-  # h2:
-  #   console:
-  #     enabled: true
-  #     path: /h2-console
 
 server:
   port: ${PORT:8080}
