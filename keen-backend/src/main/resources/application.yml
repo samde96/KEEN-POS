@@ -13,6 +13,7 @@ spring:
       ddl-auto: update # Use 'update' for development, 'validate' or 'none' for production
     show-sql: false
     properties:
+      hibernate.format_sql: true # Added this line to resolve the error
 server:
   port: ${PORT:8080}
   servlet:
