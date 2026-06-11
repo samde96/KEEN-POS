@@ -7,6 +7,8 @@ import com.keen.dto.DashboardMetrics
 import com.keen.dto.RevenueDayData
 import com.keen.dto.SalesReportPoint
 import com.keen.dto.SalesReportResponse
+import com.keen.dto.ProductSalesData
+import com.keen.dto.ProductResponse
 import com.keen.entity.Order
 import com.keen.entity.OrderItem
 import com.keen.entity.PaymentMethod
@@ -141,9 +143,11 @@ class OrderService(
 
     fun getSalesReport(period: String): SalesReportResponse {
         val normalizedPeriod = period.lowercase()
-        val buckets = buildReportBuckets(normalizedPeriod)
-        val reportStart = buckets.first().start
-        val reportEnd = buckets.last().end.minusNanos(1)
+        val buckets: List<ReportBucket> = buildReportBuckets(normalizedPeriod) // Explicit type for buckets
+        val firstBucket: ReportBucket = buckets.first() // Explicit type for firstBucket
+        val lastBucket: ReportBucket = buckets.last()   // Explicit type for lastBucket
+        val reportStart = firstBucket.start
+        val reportEnd = lastBucket.end.minusNanos(1)
         val orders = orderRepository.findByStatusAndCreatedAtBetween(
             OrderStatus.COMPLETED,
             reportStart,
@@ -172,6 +176,34 @@ class OrderService(
             totalSales.divide(BigDecimal(orders.size), 2, RoundingMode.HALF_UP)
         }
 
+        // Calculate best-selling and least-selling products
+        val productSalesMap = orders
+            .flatMap { it.items }
+            .groupBy { it.product.id }
+            .map { (productId, items) ->
+                val product = items.first().product // Get product details from the first item
+                ProductSalesData(
+                    productId = productId,
+                    productName = product.name ?: "Unknown Product",
+                    quantitySold = items.sumOf { it.quantity.toLong() },
+                    totalRevenue = items.sumOfMoney { it.subtotal }
+                )
+            }
+
+        val bestSellingProducts = productSalesMap
+            .sortedByDescending { it.quantitySold }
+            .take(5)
+
+        val leastSellingProducts = productSalesMap
+            .sortedBy { it.quantitySold }
+            .take(5)
+
+        // Calculate low stock items
+        val lowStockThreshold = 10 // Define your low stock threshold
+        val lowStockItems = productRepository.findAll()
+            .filter { it.stockQuantity <= lowStockThreshold }
+            .map { it.toResponse() }
+
         return SalesReportResponse(
             period = normalizedPeriod,
             totalSales = totalSales,
@@ -183,7 +215,10 @@ class OrderService(
             totalOrders = orders.size.toLong(),
             itemsSold = itemsSold,
             averageOrderValue = averageOrderValue,
-            data = points
+            data = points,
+            bestSellingProducts = bestSellingProducts,
+            leastSellingProducts = leastSellingProducts,
+            lowStockItems = lowStockItems
         )
     }
     
@@ -210,6 +245,21 @@ class OrderService(
         paymentMethod = this.paymentMethod.name,
         status = this.status.name,
         createdAt = this.createdAt.format(DateTimeFormatter.ISO_DATE_TIME)
+    )
+
+    private fun com.keen.entity.Product.toResponse() = ProductResponse(
+        id = this.id,
+        name = this.name,
+        description = this.description,
+        category = this.category,
+        brand = this.brand ?: "",
+        price = this.price,
+        costPrice = this.costPrice,
+        stockQuantity = this.stockQuantity,
+        sizes = this.sizes,
+        colors = this.colors,
+        imageUrl = this.imageUrl ?: "",
+        imageUrls = this.imageUrls
     )
 
     private fun buildReportBuckets(period: String): List<ReportBucket> {

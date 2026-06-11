@@ -13,9 +13,6 @@ spring:
       ddl-auto: update # Use 'update' for development, 'validate' or 'none' for production
     show-sql: false
     properties:
-      hibernate:
-        format_sql: true
-
 server:
   port: ${PORT:8080}
   servlet:

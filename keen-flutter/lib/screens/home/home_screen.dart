@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  String? _dashboardInitialSectionId; // New state variable to hold the section ID
 
   @override
   void initState() {
@@ -26,20 +27,25 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<ProductProvider>().fetchProducts();
   }
 
-  void _onTabChange(int index) {
+  void _onTabChange(int index, {String? sectionId}) {
     setState(() {
       _selectedIndex = index;
+      _dashboardInitialSectionId = sectionId; // Set the section ID when navigating to dashboard
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final tabs = [
-      HomeTab(onTabChange: _onTabChange), // Pass the callback here
+    // Create the tabs list dynamically to pass the initialSectionId to DashboardTab
+    final List<Widget> tabs = [
+      HomeTab(onTabChange: _onTabChange),
       const ProductsTab(),
       const InventoryTab(),
       const OrdersTab(),
-      const DashboardTab(),
+      DashboardTab(
+        initialSectionId: _selectedIndex == 4 ? _dashboardInitialSectionId : null,
+        onNavigate: _onTabChange, // Pass _onTabChange to DashboardTab for internal navigation
+      ),
       const SettingsTab(),
     ];
 
@@ -67,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onTabChange, // Use the callback here
+        onTap: (index) => _onTabChange(index), // Call _onTabChange without sectionId for regular tab taps
         type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(

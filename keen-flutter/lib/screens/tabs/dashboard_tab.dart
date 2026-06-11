@@ -8,7 +8,14 @@ import 'package:keen_pos/providers/dashboard_provider.dart';
 import 'package:provider/provider.dart';
 
 class DashboardTab extends StatefulWidget {
-  const DashboardTab({Key? key}) : super(key: key);
+  final String? initialSectionId;
+  final Function(int tabIndex, {String? sectionId})? onNavigate;
+
+  const DashboardTab({
+    Key? key,
+    this.initialSectionId,
+    this.onNavigate,
+  }) : super(key: key);
 
   @override
   State<DashboardTab> createState() => _DashboardTabState();
@@ -16,13 +23,60 @@ class DashboardTab extends StatefulWidget {
 
 class _DashboardTabState extends State<DashboardTab> {
   static const _periods = ['daily', 'weekly', 'monthly', 'yearly'];
+  final ScrollController _scrollController = ScrollController();
+
+  // GlobalKeys for sections to scroll to
+  final GlobalKey _salesProfitLossKey = GlobalKey();
+  final GlobalKey _productPerformanceKey = GlobalKey();
+  final GlobalKey _summaryDetailsKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardProvider>().fetchSalesReport(period: 'weekly');
+      _scrollToInitialSection();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant DashboardTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialSectionId != oldWidget.initialSectionId) {
+      _scrollToInitialSection();
+    }
+  }
+
+  void _scrollToInitialSection() {
+    if (widget.initialSectionId == null) return;
+
+    GlobalKey? targetKey;
+    switch (widget.initialSectionId) {
+      case 'sales_profit_loss':
+        targetKey = _salesProfitLossKey;
+        break;
+      case 'product_performance':
+        targetKey = _productPerformanceKey;
+        break;
+      case 'summary_details':
+        targetKey = _summaryDetailsKey;
+        break;
+    }
+
+    if (targetKey != null && targetKey.currentContext != null) {
+      Scrollable.ensureVisible(
+        targetKey.currentContext!,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.0, // Scroll to the top of the section
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -64,6 +118,7 @@ class _DashboardTabState extends State<DashboardTab> {
           return RefreshIndicator(
             onRefresh: () => dashboardProvider.fetchSalesReport(),
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
               children: [
                 _PeriodSelector(
@@ -74,9 +129,18 @@ class _DashboardTabState extends State<DashboardTab> {
                   },
                 ),
                 const SizedBox(height: 20),
-                _ReportSummary(report: report),
+                _ReportSummary(
+                  report: report,
+                  onCardTap: (sectionId) {
+                    // This will be called from _MetricCard
+                    if (widget.onNavigate != null) {
+                      widget.onNavigate!(4, sectionId: sectionId); // Navigate to DashboardTab (index 4) with sectionId
+                    }
+                  },
+                ),
                 const SizedBox(height: 24),
                 _SectionHeader(
+                  key: _salesProfitLossKey, // Assign key for scrolling
                   title: 'Sales, Profit & Loss',
                   trailing: _periodLabel(report.period),
                 ),
@@ -96,7 +160,8 @@ class _DashboardTabState extends State<DashboardTab> {
                   child: _SalesTrendChart(report: report),
                 ),
                 const SizedBox(height: 24),
-                const _SectionHeader(
+                _SectionHeader(
+                  key: _productPerformanceKey, // Assign key for scrolling
                   title: 'Product Performance',
                   trailing: 'Best & Least Selling',
                 ),
@@ -115,7 +180,8 @@ class _DashboardTabState extends State<DashboardTab> {
                   _LowStockList(items: report.lowStockItems),
                   const SizedBox(height: 24),
                 ],
-                const _SectionHeader(
+                _SectionHeader(
+                  key: _summaryDetailsKey, // Assign key for scrolling
                   title: 'Summary Details',
                   trailing: '',
                 ),
@@ -204,8 +270,12 @@ class _PeriodSelector extends StatelessWidget {
 
 class _ReportSummary extends StatelessWidget {
   final SalesReport report;
+  final Function(String sectionId)? onCardTap; // Callback for card taps
 
-  const _ReportSummary({required this.report});
+  const _ReportSummary({
+    required this.report,
+    this.onCardTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +290,7 @@ class _ReportSummary extends StatelessWidget {
                 icon: Icons.point_of_sale_outlined,
                 gradient: const [Color(0xFF17A2B8), Color(0xFF117A8B)],
                 shadowColor: const Color(0xFF17A2B8).withOpacity(0.3),
+                onTap: () => onCardTap?.call('sales_profit_loss'), // Call with section ID
               ),
             ),
             const SizedBox(width: 12),
@@ -230,6 +301,7 @@ class _ReportSummary extends StatelessWidget {
                 icon: Icons.trending_up_outlined,
                 gradient: const [Color(0xFF28A745), Color(0xFF1E7E34)],
                 shadowColor: const Color(0xFF28A745).withOpacity(0.3),
+                onTap: () => onCardTap?.call('sales_profit_loss'), // Call with section ID
               ),
             ),
           ],
@@ -244,6 +316,7 @@ class _ReportSummary extends StatelessWidget {
                 icon: Icons.trending_down_outlined,
                 gradient: const [Color(0xFFDC3545), Color(0xFFBD2130)],
                 shadowColor: const Color(0xFFDC3545).withOpacity(0.3),
+                onTap: () => onCardTap?.call('sales_profit_loss'), // Call with section ID
               ),
             ),
             const SizedBox(width: 12),
@@ -254,6 +327,7 @@ class _ReportSummary extends StatelessWidget {
                 icon: Icons.receipt_long_outlined,
                 gradient: const [Color(0xFF007BFF), Color(0xFF0062CC)],
                 shadowColor: const Color(0xFF007BFF).withOpacity(0.3),
+                onTap: () => onCardTap?.call('summary_details'), // Call with section ID
               ),
             ),
           ],
@@ -269,6 +343,7 @@ class _MetricCard extends StatelessWidget {
   final IconData icon;
   final List<Color> gradient;
   final Color shadowColor;
+  final VoidCallback? onTap; // Added onTap callback
 
   const _MetricCard({
     required this.label,
@@ -276,66 +351,70 @@ class _MetricCard extends StatelessWidget {
     required this.icon,
     required this.gradient,
     required this.shadowColor,
+    this.onTap, // Initialize onTap
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 110,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector( // Wrap with GestureDetector
+      onTap: onTap,
+      child: Container(
+        height: 110,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor,
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: shadowColor,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
                 ),
-                child: Icon(icon, color: Colors.white, size: 20),
-              ),
-              const Icon(Icons.insights, color: Colors.white70, size: 20),
-            ],
-          ),
-          const Spacer(),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                const Icon(Icons.insights, color: Colors.white70, size: 20),
+              ],
+            ),
+            const Spacer(),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -346,9 +425,10 @@ class _SectionHeader extends StatelessWidget {
   final String trailing;
 
   const _SectionHeader({
+    Key? key, // Add Key parameter
     required this.title,
     required this.trailing,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

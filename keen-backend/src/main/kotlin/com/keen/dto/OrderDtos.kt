@@ -74,7 +74,10 @@ data class SalesReportResponse(
     val totalOrders: Long,
     val itemsSold: Long,
     val averageOrderValue: BigDecimal,
-    val data: List<SalesReportPoint>
+    val data: List<SalesReportPoint>,
+    val bestSellingProducts: List<ProductSalesData>,
+    val leastSellingProducts: List<ProductSalesData>,
+    val lowStockItems: List<ProductResponse>
 )
 
 data class SalesReportPoint(

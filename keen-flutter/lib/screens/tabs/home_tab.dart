@@ -7,7 +7,7 @@ import 'package:keen_pos/providers/order_provider.dart';
 import 'package:keen_pos/models/models.dart';
 
 class HomeTab extends StatefulWidget {
-  final Function(int) onTabChange;
+  final Function(int, {String? sectionId}) onTabChange; // Modified to accept sectionId
 
   const HomeTab({Key? key, required this.onTabChange}) : super(key: key);
 
@@ -122,7 +122,10 @@ class _HomeTabState extends State<HomeTab> {
               if (dashboardProvider.isLoading && dashboardProvider.report == null)
                 const Center(child: CircularProgressIndicator())
               else if (dashboardProvider.report != null)
-                _TodaySummaryGrid(report: dashboardProvider.report!)
+                _TodaySummaryGrid(
+                  report: dashboardProvider.report!,
+                  onCardTap: widget.onTabChange, // Pass the onTabChange callback
+                )
               else
                 const Center(child: Text('No summary available')),
 
@@ -165,8 +168,9 @@ class _HomeTabState extends State<HomeTab> {
 
 class _TodaySummaryGrid extends StatelessWidget {
   final SalesReport report;
+  final Function(int, {String? sectionId}) onCardTap; // Callback for card taps
 
-  const _TodaySummaryGrid({required this.report});
+  const _TodaySummaryGrid({required this.report, required this.onCardTap});
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +190,7 @@ class _TodaySummaryGrid extends StatelessWidget {
           icon: Icons.payments_outlined,
           gradient: const [Color(0xFF17A2B8), Color(0xFF117A8B)],
           shadowColor: const Color(0xFF17A2B8).withOpacity(0.3),
+          onTap: () => onCardTap(4, sectionId: 'sales_profit_loss'), // Navigate to Reports tab, Sales section
         ),
         _SummaryCard(
           label: 'Today\'s Profit',
@@ -193,6 +198,7 @@ class _TodaySummaryGrid extends StatelessWidget {
           icon: Icons.trending_up,
           gradient: const [Color(0xFF28A745), Color(0xFF1E7E34)],
           shadowColor: const Color(0xFF28A745).withOpacity(0.3),
+          onTap: () => onCardTap(4, sectionId: 'sales_profit_loss'), // Navigate to Reports tab, Profit section
         ),
         _SummaryCard(
           label: 'Orders',
@@ -200,6 +206,7 @@ class _TodaySummaryGrid extends StatelessWidget {
           icon: Icons.receipt_long_outlined,
           gradient: const [Color(0xFF007BFF), Color(0xFF0062CC)],
           shadowColor: const Color(0xFF007BFF).withOpacity(0.3),
+          onTap: () => onCardTap(3), // Navigate to Orders tab
         ),
         _SummaryCard(
           label: 'Items Sold',
@@ -207,6 +214,7 @@ class _TodaySummaryGrid extends StatelessWidget {
           icon: Icons.inventory_2_outlined,
           gradient: const [Color(0xFF6F42C1), Color(0xFF59359A)],
           shadowColor: const Color(0xFF6F42C1).withOpacity(0.3),
+          onTap: () => onCardTap(4, sectionId: 'summary_details'), // Navigate to Reports tab, Summary Details (Items Sold is part of this)
         ),
       ],
     );
@@ -219,6 +227,7 @@ class _SummaryCard extends StatelessWidget {
   final IconData icon;
   final List<Color> gradient;
   final Color shadowColor;
+  final VoidCallback? onTap; // Added onTap callback
 
   const _SummaryCard({
     required this.label,
@@ -226,60 +235,64 @@ class _SummaryCard extends StatelessWidget {
     required this.icon,
     required this.gradient,
     required this.shadowColor,
+    this.onTap, // Initialize onTap
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: shadowColor,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return GestureDetector( // Wrap with GestureDetector
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-          const Spacer(),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const Spacer(),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

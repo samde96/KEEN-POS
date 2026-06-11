@@ -58,3 +58,10 @@ data class ProductMetadataResponse(
     val sizes: List<String>,
     val colors: List<String>
 )
+
+data class ProductSalesData(
+    val productId: Long,
+    val productName: String,
+    val quantitySold: Long,
+    val totalRevenue: BigDecimal
+)
