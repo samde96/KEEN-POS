@@ -1,0 +1,36 @@
+# Common
+.DS_Store
+.history
+.idea/
+.vscode/
+*.iml
+*.log
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Flutter
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/android/local.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+
+# Backend (Maven/Kotlin)
+**/target/
+**/data/
+**/*.class
+**/bin/
+**/.settings/
+**/.classpath
+**/.project
+**/out/
