@@ -2,22 +2,23 @@ spring:
   application:
     name: keen-pos
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:h2:file:./data/keen-pos-db;AUTO_SERVER=TRUE}
-    driverClassName: org.h2.Driver
-    username: ${JDBC_DATABASE_USERNAME:sa}
-    password: ${JDBC_DATABASE_PASSWORD:}
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/keen_pos_db} # Default for local dev, will be overridden by Render ENV
+    driverClassName: org.postgresql.Driver
+    username: ${JDBC_DATABASE_USERNAME:keen_pos_user} # Default for local dev, will be overridden by Render ENV
+    password: ${JDBC_DATABASE_PASSWORD:password} # Default for local dev, will be overridden by Render ENV
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: update # Use 'update' for development, 'validate' or 'none' for production
     show-sql: false
     properties:
       hibernate:
         format_sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+  # H2 console is disabled as we are using PostgreSQL on Render
+  # h2:
+  #   console:
+  #     enabled: true
+  #     path: /h2-console
 
 server:
   port: ${PORT:8080}
