@@ -13,6 +13,6 @@ COPY --from=build /app/target/*.jar app.jar
 # Create a directory for H2 database
 RUN mkdir -p /app/data
 
-EXPOSE 8080
+EXPOSE 10000
 
-ENTRYPOINT ["java", "-jar", "app.jar", "--server.port=${PORT:8080}"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
